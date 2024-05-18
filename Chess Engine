@@ -1,0 +1,141 @@
+import numpy as np
+
+# Constants
+EMPTY = '.'
+WHITE = 'W'
+BLACK = 'B'
+PAWN = 'P'
+PIECES = {
+    'P': 1, 'p': -1
+}
+
+# Initial board setup
+def initial_board():
+    return [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+    ]
+
+# Function to print the board
+def print_board(board):
+    for row in board:
+        print(' '.join(row))
+    print()
+
+# Function to get all possible moves for a pawn
+def get_pawn_moves(board, row, col, color):
+    moves = []
+    direction = -1 if color == WHITE else 1
+    start_row = 6 if color == WHITE else 1
+
+    # Move one step forward
+    if board[row + direction][col] == EMPTY:
+        moves.append((row + direction, col))
+
+    # Move two steps forward from the start position
+    if row == start_row and board[row + direction][col] == EMPTY and board[row + 2 * direction][col] == EMPTY:
+        moves.append((row + 2 * direction, col))
+
+    # Captures
+    if col - 1 >= 0 and board[row + direction][col - 1] != EMPTY and board[row + direction][col - 1].islower() if color == WHITE else board[row + direction][col - 1].isupper():
+        moves.append((row + direction, col - 1))
+    if col + 1 < 8 and board[row + direction][col + 1] != EMPTY and board[row + direction][col + 1].islower() if color == WHITE else board[row + direction][col + 1].isupper():
+        moves.append((row + direction, col + 1))
+
+    return moves
+
+# Function to get all possible moves for the current player
+def get_all_moves(board, color):
+    moves = []
+    for row in range(8):
+        for col in range(8):
+            if (color == WHITE and board[row][col].isupper()) or (color == BLACK and board[row][col].islower()):
+                piece = board[row][col].upper()
+                if piece == PAWN:
+                    piece_moves = get_pawn_moves(board, row, col, color)
+                    for move in piece_moves:
+                        moves.append(((row, col), move))
+    return moves
+
+# Function to make a move on the board
+def make_move(board, move):
+    (start_row, start_col), (end_row, end_col) = movepython -c "import numpy; print(numpy.__version__)"
+
+    new_board = [row[:] for row in board]
+    new_board[end_row][end_col] = new_board[start_row][start_col]
+    new_board[start_row][start_col] = EMPTY
+    return new_board
+
+# Evaluation function
+def evaluate_board(board):
+    score = 0
+    for row in board:
+        for piece in row:
+            if piece in PIECES:
+                score += PIECES[piece]
+    return score
+
+# Minimax with alpha-beta pruning
+def minimax(board, depth, alpha, beta, maximizing_player):
+    if depth == 0:
+        return evaluate_board(board)
+
+    color = WHITE if maximizing_player else BLACK
+    moves = get_all_moves(board, color)
+
+    if maximizing_player:
+        max_eval = -np.inf
+        for move in moves:
+            eval = minimax(make_move(board, move), depth - 1, alpha, beta, False)
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+        return max_eval
+    else:
+        min_eval = np.inf
+        for move in moves:
+            eval = minimax(make_move(board, move), depth - 1, alpha, beta, True)
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return min_eval
+
+# Function to get the best move
+def get_best_move(board, depth):
+    best_move = None
+    best_value = -np.inf
+    moves = get_all_moves(board, WHITE)
+
+    for move in moves:
+        board_after_move = make_move(board, move)
+        board_value = minimax(board_after_move, depth - 1, -np.inf, np.inf, False)
+        if board_value > best_value:
+            best_value = board_value
+            best_move = move
+
+    return best_move
+
+# Main function to run the chess engine
+def main():
+    board = initial_board()
+    print("Initial Board:")
+    print_board(board)
+
+    # Get the best move for white
+    depth = 3
+    best_move = get_best_move(board, depth)
+    if best_move:
+        print(f"Best move: {best_move}")
+        board = make_move(board, best_move)
+        print_board(board)
+
+if __name__ == "__main__":
+    main()
